@@ -16,9 +16,23 @@ static LPWSTR build_command(char *executable, char **arguments)
         command_length += (int)strlen(executable);
     }
 
+    // CRITICAL: arguments[0] is the executable itself (set by the Dart
+    // side as `argv.elementAt(0).value = executable.toNativeUtf8()`).
+    // When CreateProcessW is called with `lpApplicationName = NULL` and a
+    // multi-token `lpCommandLine`, Windows sets the child's argv[0] from
+    // the FIRST token of lpCommandLine. So we must NOT include
+    // arguments[0] in the concatenation — that's what this function
+    // used to do, and it caused pwsh.exe to receive a duplicate of its
+    // own path as argv[1], which it then interpreted as a `-File
+    // <pwsh.exe>` script argument and died with
+    //   "Processing -File 'C:\Program Files\…\pwsh.exe' failed because
+    //    the file does not have a '.ps1' extension."
+    // Skip arguments[0]; start the space-separated concatenation at
+    // arguments[1] so lpCommandLine = "<executable> <args[1]> <args[2]> …"
+    // and Windows parses argv = [executable, args[1], args[2], …].
     if (arguments != NULL)
     {
-        int i = 0;
+        int i = 1; // <-- skip arguments[0]
 
         while (arguments[i] != NULL)
         {
@@ -47,7 +61,7 @@ static LPWSTR build_command(char *executable, char **arguments)
 
         if (arguments != NULL)
         {
-            int j = 0;
+            int j = 1; // <-- skip arguments[0]
 
             while (arguments[j] != NULL)
             {
