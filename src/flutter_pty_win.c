@@ -311,6 +311,8 @@ typedef struct PtyHandle
 } PtyHandle;
 
 static char *error_message = NULL;
+
+FFI_PLUGIN_EXPORT PtyHandle *pty_create(PtyOptions *options)
 {
     HANDLE inputReadSide = NULL;
     HANDLE inputWriteSide = NULL;
