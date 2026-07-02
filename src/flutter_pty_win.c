@@ -262,9 +262,21 @@ static DWORD WINAPI wait_exit_thread(LPVOID arg)
 
 static void start_wait_exit_thread(HANDLE pid, Dart_Port port, HANDLE mutex)
 {
+    // Duplicate the process handle so the wait thread can close its copy
+    // without invalidating the one stored in PtyHandle->hProcess. Without
+    // this, the close below would leave hProcess pointing at a freed
+    // handle, and our pty_write liveness check (WaitForSingleObject with
+    // a 0 timeout) would never observe WAIT_OBJECT_0.
+    HANDLE thread_pid;
+    if (!DuplicateHandle(GetCurrentProcess(), pid, GetCurrentProcess(), &thread_pid, 0, FALSE, DUPLICATE_SAME_ACCESS))
+    {
+        error_message = "Failed to duplicate process handle for wait thread";
+        return;
+    }
+
     WaitExitOptions *options = malloc(sizeof(WaitExitOptions));
 
-    options->pid = pid;
+    options->pid = thread_pid;
     options->port = port;
     options->hMutex = mutex;
 
