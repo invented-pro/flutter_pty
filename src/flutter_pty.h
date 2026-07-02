@@ -41,6 +41,8 @@ FFI_PLUGIN_EXPORT PtyHandle *pty_create(PtyOptions *options);
 
 FFI_PLUGIN_EXPORT void pty_write(PtyHandle *handle, char *buffer, int length);
 
+FFI_PLUGIN_EXPORT void pty_close(PtyHandle *handle);
+
 FFI_PLUGIN_EXPORT void pty_ack_read(PtyHandle *handle);
 
 FFI_PLUGIN_EXPORT int pty_resize(PtyHandle *handle, int rows, int cols);

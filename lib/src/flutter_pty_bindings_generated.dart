@@ -406,6 +406,21 @@ class FlutterPtyBindings {
   late final _pty_write = _pty_writePtr.asFunction<
       void Function(ffi.Pointer<PtyHandle>, ffi.Pointer<ffi.Char>, int)>();
 
+  void pty_close(
+    ffi.Pointer<PtyHandle> handle,
+  ) {
+    return _pty_close(
+      handle,
+    );
+  }
+
+  late final _pty_closePtr = _lookup<
+      ffi.NativeFunction<
+          ffi.Void Function(
+              ffi.Pointer<PtyHandle>)>>('pty_close');
+  late final _pty_close = _pty_closePtr
+      .asFunction<void Function(ffi.Pointer<PtyHandle>)>();
+
   void pty_ack_read(
     ffi.Pointer<PtyHandle> handle,
   ) {

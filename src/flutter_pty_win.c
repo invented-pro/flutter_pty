@@ -286,6 +286,8 @@ typedef struct PtyHandle
 
     HPCON hPty;
 
+    HANDLE hProcess;
+
     DWORD dwProcessId;
 
     BOOL ackRead;
@@ -435,6 +437,7 @@ FFI_PLUGIN_EXPORT PtyHandle *pty_create(PtyOptions *options)
     pty->inputWriteSide = inputWriteSide;
     pty->outputReadSide = outputReadSide;
     pty->hPty = hPty;
+    pty->hProcess = processInfo.hProcess;
     pty->dwProcessId = processInfo.dwProcessId;
     pty->ackRead = options->ackRead;
     pty->hMutex = mutex;
@@ -446,11 +449,50 @@ FFI_PLUGIN_EXPORT void pty_write(PtyHandle *handle, char *buffer, int length)
 {
     DWORD bytesWritten;
 
+    // Bail before WriteFile if the PTY's child process has already exited.
+    // Without this, writing to an orphaned ConPTY input pipe blocks the
+    // caller (UI thread) until something calls ClosePseudoConsole — and
+    // nothing does, because we never invoke pty_close before the host
+    // app tears down. The 0-timeout wait returns immediately: WAIT_OBJECT_0
+    // means the process handle is signaled (= process dead).
+    if (handle == NULL || handle->hProcess == NULL)
+    {
+        return;
+    }
+    if (WaitForSingleObject(handle->hProcess, 0) == WAIT_OBJECT_0)
+    {
+        return;
+    }
+
     WriteFile(handle->inputWriteSide, buffer, length, &bytesWritten, NULL);
 
     FlushFileBuffers(handle->inputWriteSide);
 
     return;
+}
+
+FFI_PLUGIN_EXPORT void pty_close(PtyHandle *handle)
+{
+    if (handle == NULL)
+    {
+        return;
+    }
+    if (handle->hPty != NULL)
+    {
+        ClosePseudoConsole(handle->hPty);
+        handle->hPty = NULL;
+    }
+    if (handle->inputWriteSide != NULL)
+    {
+        CloseHandle(handle->inputWriteSide);
+        handle->inputWriteSide = NULL;
+    }
+    if (handle->outputReadSide != NULL)
+    {
+        CloseHandle(handle->outputReadSide);
+        handle->outputReadSide = NULL;
+    }
+    handle->hProcess = NULL;
 }
 
 FFI_PLUGIN_EXPORT void pty_ack_read(PtyHandle *handle)

@@ -207,6 +207,12 @@ FFI_PLUGIN_EXPORT void pty_write(PtyHandle *handle, char *buffer, int length)
     write(handle->ptm, buffer, length);
 }
 
+FFI_PLUGIN_EXPORT void pty_close(PtyHandle *handle)
+{
+    // no-op on unix: closing the PTY master fd would race with the read
+    // thread and the ConPTY orphan-blocking issue does not apply there.
+}
+
 FFI_PLUGIN_EXPORT void pty_ack_read(PtyHandle *handle)
 {
     if (handle->ackRead)
