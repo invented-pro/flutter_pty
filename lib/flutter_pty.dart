@@ -178,13 +178,13 @@ class Pty {
   }
 
   /// Close the pseudo-terminal and release all its underlying handles.
-  /// On Windows this signals both the C-side read and dart-comms worker
-  /// threads to stop, cancels any in-flight overlapped read on conout,
-  /// and then calls `ClosePseudoConsole`. The previous synchronous
-  /// implementation deadlocked when called from the UI thread because
-  /// the read thread was blocked in `Dart_PostCObject_DL`; the new
-  /// implementation decouples the read from the Dart message port via
-  /// a bounded ring buffer, so the cancellation is observed promptly.
+  /// On Windows this drains the pending write queue, closes the ConPTY
+  /// input pipe, calls `ClosePseudoConsole` (which terminates the
+  /// attached shell and waits for conhost to flush conout), then
+  /// closes the output pipe and joins the reader thread. The reader
+  /// and writer run on dedicated OS threads, so neither the
+  /// `Dart_PostCObject_DL` path nor `WriteFile(conin)` can block the
+  /// UI thread. Mirrors the alacritty tty/windows model.
   void close() {
     _bindings.pty_close(_handle);
   }
