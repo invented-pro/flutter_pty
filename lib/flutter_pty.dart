@@ -177,6 +177,18 @@ class Pty {
     malloc.free(buf);
   }
 
+  /// Close the pseudo-terminal and release all its underlying handles.
+  /// On Windows this signals both the C-side read and dart-comms worker
+  /// threads to stop, cancels any in-flight overlapped read on conout,
+  /// and then calls `ClosePseudoConsole`. The previous synchronous
+  /// implementation deadlocked when called from the UI thread because
+  /// the read thread was blocked in `Dart_PostCObject_DL`; the new
+  /// implementation decouples the read from the Dart message port via
+  /// a bounded ring buffer, so the cancellation is observed promptly.
+  void close() {
+    _bindings.pty_close(_handle);
+  }
+
   /// Resize the pseudo-terminal.
   void resize(int rows, int cols) {
     _bindings.pty_resize(_handle, rows, cols);
