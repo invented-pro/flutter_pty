@@ -163,6 +163,8 @@ static LPWSTR build_working_directory(char *working_directory)
     return working_directory_block;
 }
 
+static char *error_message;
+
 typedef struct ReadLoopOptions
 {
     HANDLE fd;
@@ -308,9 +310,7 @@ typedef struct PtyHandle
 
 } PtyHandle;
 
-char *error_message = NULL;
-
-FFI_PLUGIN_EXPORT PtyHandle *pty_create(PtyOptions *options)
+static char *error_message = NULL;
 {
     HANDLE inputReadSide = NULL;
     HANDLE inputWriteSide = NULL;
