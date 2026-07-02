@@ -480,8 +480,6 @@ FFI_PLUGIN_EXPORT void pty_write(PtyHandle *handle, char *buffer, int length)
 
     WriteFile(handle->inputWriteSide, buffer, length, &bytesWritten, NULL);
 
-    FlushFileBuffers(handle->inputWriteSide);
-
     return;
 }
 
