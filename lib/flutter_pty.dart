@@ -177,16 +177,6 @@ class Pty {
     malloc.free(buf);
   }
 
-  /// Close the pseudo-terminal and release its underlying handles
-  /// (ConPTY handle on Windows, PTY master fd on unix). On Windows this
-  /// is what unblocks any pending `WriteFile` on the ConPTY input pipe:
-  /// `WriteFile` does NOT return `ERROR_BROKEN_PIPE` until the HPCON is
-  /// closed, so without `close` the host's UI thread can deadlock on
-  /// `pty.write` after the PTY's child process has exited.
-  void close() {
-    _bindings.pty_close(_handle);
-  }
-
   /// Resize the pseudo-terminal.
   void resize(int rows, int cols) {
     _bindings.pty_resize(_handle, rows, cols);
